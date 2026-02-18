@@ -1,14 +1,10 @@
-version: "3.8"
+version: "3.9"
 
 services:
-
-  redis:
-    image: redis:7
-    ports:
-      - "6379:6379"
-
   backend:
     build: ./backend
+    container_name: superclaims-backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     environment:
@@ -18,7 +14,8 @@ services:
 
   worker:
     build: ./backend
-    command: celery -A worker worker --loglevel=info
+    container_name: superclaims-worker
+    command: celery -A worker.celery worker --loglevel=info
     environment:
       - REDIS_URL=redis://redis:6379/0
     depends_on:
@@ -26,7 +23,16 @@ services:
 
   frontend:
     image: nginx:alpine
+    container_name: superclaims-frontend
     volumes:
-      - ./frontend:/usr/share/nginx/html
+      - ./frontend:/usr/share/nginx/html:ro
     ports:
       - "3000:80"
+    depends_on:
+      - backend
+
+  redis:
+    image: redis:7
+    container_name: superclaims-redis
+    ports:
+      - "6379:6379"
