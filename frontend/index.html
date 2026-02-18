@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Task Notifier</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #0f172a;
+        color: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .card {
+        background: #020617;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        width: 100%;
+        max-width: 480px;
+        border: 1px solid #1f2937;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.5rem;
+        color: #f9fafb;
+      }
+      p {
+        margin: 0 0 1.5rem;
+        color: #9ca3af;
+        font-size: 0.95rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+        color: #e5e7eb;
+      }
+      input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #374151;
+        background: #020617;
+        color: #e5e7eb;
+        font-size: 0.95rem;
+        box-sizing: border-box;
+      }
+      input:focus {
+        outline: none;
+        border-color: #22c55e;
+        box-shadow: 0 0 0 1px #22c55e33;
+      }
+      button {
+        margin-top: 0.75rem;
+        width: 100%;
+        padding: 0.6rem 1rem;
+        border-radius: 0.5rem;
+        border: none;
+        background: #22c55e;
+        color: #022c22;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+      }
+      .status {
+        margin-top: 1.25rem;
+        padding: 0.75rem 0.9rem;
+        border-radius: 0.5rem;
+        background: #020617;
+        border: 1px solid #1f2937;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Task Notifier</h1>
+      <p>Trigger a notification task and watch its status update in real time.</p>
+
+      <label for="email">Email</label>
+      <input id="email" type="email" placeholder="dev@example.com" />
+      <button id="notify-btn">Send notification</button>
+
+      <div id="status" class="status" style="display: none">
+        <div><strong>Task ID:</strong> <span id="task-id"></span></div>
+        <div><strong>Status:</strong> <span id="task-status"></span></div>
+        <div id="task-result-line" style="margin-top: 0.5rem; display: none">
+          <strong>Result:</strong> <span id="task-result"></span>
+        </div>
+      </div>
+
+      <div id="error" style="margin-top: 10px; color: red;"></div>
+    </div>
+
+    <script>
+      const API_BASE = "";   // IMPORTANT: Uses same ALB domain
+
+      const emailInput = document.getElementById("email");
+      const notifyBtn = document.getElementById("notify-btn");
+      const statusBox = document.getElementById("status");
+      const taskIdEl = document.getElementById("task-id");
+      const taskStatusEl = document.getElementById("task-status");
+      const taskResultLine = document.getElementById("task-result-line");
+      const taskResultEl = document.getElementById("task-result");
+      const errorEl = document.getElementById("error");
+
+      let pollTimer = null;
+
+      async function pollStatus(taskId) {
+        try {
+          const res = await fetch(`${API_BASE}/task_status/${taskId}`);
+          const data = await res.json();
+
+          taskStatusEl.textContent = data.status;
+
+          if (data.status === "completed") {
+            if (data.result) {
+              taskResultLine.style.display = "block";
+              taskResultEl.textContent = data.result;
+            }
+            clearInterval(pollTimer);
+          }
+        } catch (err) {
+          errorEl.textContent = err.message;
+          clearInterval(pollTimer);
+        }
+      }
+
+      async function notify() {
+        errorEl.textContent = "";
+
+        const email = emailInput.value.trim();
+        if (!email) {
+          errorEl.textContent = "Email is required.";
+          return;
+        }
+
+        try {
+          const res = await fetch(
+            `${API_BASE}/notify/?email=${encodeURIComponent(email)}`,
+            { method: "POST" }
+          );
+
+          const data = await res.json();
+          const taskId = data.task_id;
+
+          taskIdEl.textContent = taskId;
+          taskStatusEl.textContent = "in progress";
+          statusBox.style.display = "block";
+
+          pollTimer = setInterval(() => pollStatus(taskId), 2000);
+        } catch (err) {
+          errorEl.textContent = err.message;
+        }
+      }
+
+      notifyBtn.addEventListener("click", notify);
+    </script>
+  </body>
+</html>
