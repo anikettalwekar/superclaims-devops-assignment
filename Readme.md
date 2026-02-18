@@ -35,6 +35,7 @@ The architecture includes:
 - GitHub Actions for CI/CD
 
 Architecture diagram is attached below.
+https://github.com/anikettalwekar/superclaims-devops-assignment/blob/main/architecture/project%20architecture.png
 
 ## Infrastructure (Terraform)
 
