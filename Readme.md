@@ -1,50 +1,119 @@
-## DevOps Assessment Assignment
+# SuperClaims DevOps Assignment
 
-### Overview
+Hi,
 
-**Key components**
+This is my DevOps assignment project. In this project I containerized the application and deployed it on AWS using ECS Fargate. I also implemented CI/CD pipeline using GitHub Actions.
 
-- **Backend** (`backend/main.py`) – FastAPI app: `POST /notify/` enqueues a Celery task, `GET /task_status/{task_id}` returns status/result.
-- **Worker** (`backend/worker.py`) – Celery worker that runs the background task.
-- **Redis** – Message broker and result backend for Celery.
-- **Frontend** (`frontend/index.html`) – Single page that triggers a task and polls until it’s done.
+## Project Overview
 
-**Run locally (no Docker)**
+This project has:
 
-1. Start Redis.
-2. From project root: `cd backend && python -m venv venv`, activate venv, `pip install -r ../requirements.txt`.
-3. Terminal 1: `cd backend && celery -A worker worker --loglevel=info`.
-4. Terminal 2: `cd backend && uvicorn main:app --reload --port 8000`.
-5. Serve frontend: simply open index.html in browser.
----
+- FastAPI backend
+- Celery worker
+- Redis as message broker
+- Simple frontend
+- Docker setup
+- Terraform infrastructure
+- GitHub Actions CI/CD
 
-Design and implement a workflow to:
+User flow:
 
-- **Containerize the application**
-  - Build Docker images for the existing backend.
-  - Provide a setup to run the app locally.
-  - Identify all the hardcoded values and replace those with environment variables.
-  - Include any required local dependencies (e.g. message broker, database) as containers.
+User → ALB → ECS Fargate → Backend → Redis → Worker
 
-- **Run containers locally**
-  - Provide clear commands to:
-    - Build images.
-    - Start the full stack.
-    - View logs and debug.
+## Architecture
 
-- **Deploy to a cloud provider using code (no manual clicks)**
-  - Use **Infrastructure as Code (IaC)** to provision all cloud resources.
-  - Use **CI/CD** (GitHub Actions, GitLab CI, Azure DevOps, etc.) to build, push images, and deploy the app.
+The architecture includes:
 
-- **Maximize managed cloud services**
-  - Prefer managed services over self-hosted where possible.
-  - Use cloud-native logging/monitoring where reasonable (e.g. CloudWatch, Azure Monitor, Stackdriver).
+- Custom VPC (ap-south-1)
+- 2 Public Subnets
+- 2 Private Subnets
+- Internet Gateway
+- Application Load Balancer (Internet-facing)
+- ECS Cluster (Fargate)
+- ECR Repository
+- CloudWatch Logs
+- GitHub Actions for CI/CD
 
-- **Deliverables**
-  - updated code base with IAC and build related code.
-  - document your journey in `journey.md` file.
-  - create `instructions.md` file for developers to run containerized setup locally.
-  - simple architecture diagram to showcase cloud resources.
-  - single-page frontend in `frontend/index.html` that:
-    - calls the `POST /notify/` API to trigger a background task.
-    - polls the `GET /task_status/{task_id}` API to show live task status and result.
+Architecture diagram is attached below.
+
+## Infrastructure (Terraform)
+
+All AWS resources are created using Terraform.
+
+Main resources:
+
+- VPC
+- Subnets
+- Route tables
+- Security Groups
+- ALB
+- Target Group
+- ECS Cluster
+- ECS Service
+- ECR Repository
+- CloudWatch Log Group
+
+Commands used:
+
+terraform init  
+terraform plan  
+terraform apply  
+
+No manual creation from console.
+
+## CI/CD Pipeline
+
+I created GitHub Actions workflow.
+
+Pipeline steps:
+
+1. Build Docker image
+2. Login to Amazon ECR
+3. Push image to ECR
+4. Force new ECS deployment
+
+Whenever I push code to main branch, deployment happens automatically.
+
+## CloudWatch Logs
+
+Container logs are sent to CloudWatch log group:
+
+/ecs/superclaims
+
+This helps in debugging and monitoring.
+
+## Application URL
+
+Application is accessible through ALB DNS.
+
+Health endpoint:
+
+/health
+
+## Run Locally
+
+To run project locally:
+
+docker-compose up --build
+
+Frontend:
+http://localhost:3000
+
+Backend:
+http://localhost:8000
+
+## Screenshots
+
+All deployment screenshots are available in screenshots folder.
+
+## Challenges Faced
+
+- Terraform provider files accidentally pushed to GitHub (large file issue). Fixed using .gitignore and clean git re-initialization.
+- ElastiCache creation issue, so Redis container is used inside ECS task.
+- ALB health check path needed proper endpoint.
+
+## Conclusion
+
+This project demonstrates containerization, Infrastructure as Code, CI/CD automation and cloud deployment using AWS ECS Fargate.
+
+Thank you.
